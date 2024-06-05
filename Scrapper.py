@@ -499,6 +499,36 @@ class Scrapper(Mouser):
             print(e)
             return {"status": 404}
 
+    def scrap_Wago(self, partnumber):
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36'
+        }
+        url = requests.get("https://smartdata.wago.com/articledata/svhc?articleNr=" +
+                           urllib.parse.quote(str(partnumber), safe="") + "&country=Germany", headers=headers)
+        soup = BeautifulSoup(url.text, 'lxml')
+        try:
+
+            table = soup.find(id="articleList")
+
+            spn_grabbed = table.tbody.tr.td.text
+            description = table.tbody.tr.td.find_next('td').text
+            reach_substance = table.tbody.tr.td.find_next(
+                'td').find_next('td').text
+            scip = table.tbody.tr.td.find_next(
+                'td').find_next('td').find_next('td').text
+            cas_no = table.tbody.tr.td.find_next('td').find_next(
+                'td').find_next('td').find_next('td').text
+            rohs_status = table.tbody.tr.td.find_next('td').find_next(
+                'td').find_next('td').find_next('td').find_next('td').text
+            rohs_exception = table.tbody.tr.td.find_next('td').find_next('td').find_next(
+                'td').find_next('td').find_next('td').find_next('td').text
+
+            return {"Results": "Found", "Partnumber": partnumber, "PartName": description, "SPN_grabbed": spn_grabbed, "Reach": reach_substance, "Scip": scip, "Cas_no": cas_no, "ROHS_Exception": rohs_exception, "ROHS_Status": rohs_status, "Declaration": "https://smartdata.wago.com/articledata/svhc/download?articleNr=" + spn_grabbed + "&country=Austria"}
+
+        except Exception as e:
+            print(e)
+            return {"status": 404}
+
     def find_Supplier(self, partnumber):
 
         def Check_Response(supplier, response, foundlist):
