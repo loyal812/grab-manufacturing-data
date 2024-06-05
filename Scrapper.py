@@ -424,6 +424,30 @@ class Scrapper(Mouser):
             print(e)
             return {status: 404}
 
+    def scrap_Rscomponents(self, partnumber):
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36'
+        }
+        try:
+            url = "https://export.rsdelivers.com/productlist/search?query=" + \
+                urllib.parse.quote(str(partnumber))
+
+            r = requests.get(url, headers=headers)
+            data = BeautifulSoup(r.text, 'lxml')
+            partName = data.find(
+                "h1", class_='product-detail-page-component_title__HAXxV').text
+
+            manufacturerName = data.find("div", class_='pill-component-module_grey__38ctb').find_next(
+                "div", class_='pill-component-module_grey__38ctb').text
+
+            mpn = data.find("div", class_='pill-component-module_grey__38ctb').find_next(
+                "div", class_='pill-component-module_grey__38ctb').find_next("div", class_='pill-component-module_grey__38ctb').text
+
+            return {"Results": "Found", "Partnumber": partnumber, "mpn": mpn, "partName": partName, "manufacturerName": manufacturerName}
+        except Exception as e:
+            print(e)
+            return {"status": 404}
+
     def find_Supplier(self, partnumber):
 
         def Check_Response(supplier, response, foundlist):
