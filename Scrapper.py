@@ -302,6 +302,33 @@ class Scrapper(Mouser):
 
         return result
 
+    def scrap_onsemi(self, partnumber):
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36'
+        }
+        try:
+            response = requests.get(
+                "https://www.onsemi.com/PowerSolutions/MaterialComposition.do?searchParts=" + urllib.parse.quote(str(partnumber), safe=''), headers=headers)
+            data = BeautifulSoup(response.text, 'lxml')
+            table = data.find(id="MaterialCompositionTable")
+            pn = table.tbody.tr.td.find_next('td').text
+            status = table.tbody.tr.td.find_next('td').find_next('td').text
+            hf = table.tbody.tr.td.find_next(
+                'td').find_next('td').find_next('td').text
+            excempt = table.tbody.tr.td.find_next('td').find_next(
+                'td').find_next('td').find_next('td').text
+            links = table.find_all('a', href=True)
+            declaration = "https://www.onsemi.com" + links[5]['href']
+            lead = "not found"
+            if len(excempt) > 1:
+                lead = table.tbody.tr.td.find_next('td').find_next('td').find_next('td').find_next('td').find_next('td').find_next('td').find_next('td').find_next('td').find_next('td').find_next('td').find_next(
+                    'td').find_next('td').find_next('td').find_next('td').find_next('td').find_next('td').find_next('td').find_next('td').find_next('td').find_next('td').find_next('td').find_next('td').text
+
+            return {"Results": "Found", "SPN_grabbed": pn, "Status": status, "HF": hf, "Excemption": excempt, "Declaration": declaration, "Lead(Cas No:7439-92-1)": lead}
+
+        except Exception as e:
+            return {"status": 404}
+
     def find_Supplier(self, partnumber):
 
         def Check_Response(supplier, response, foundlist):
