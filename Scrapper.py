@@ -643,6 +643,44 @@ class Scrapper(Mouser):
 
         return suppliers
 
+# get multi parts number response from csv data. iterate parts on server side
+    # ***************************************  Wago data from csv.  ***********************************************
+    def scrap_Wagos(self, partnumbers):
+        scrapped_data = []
+        partnumbers = ['793-501', '870-551', '210-111', '284-317', '284-601', '2006-1301', '2006-1391', '2009-115', '209-112', '282-122', '2006-1307', '282-311', '281-687', '2000-1207', '249-119', '2000-410', '2002-1201', '2000-1291', '2000-405',
+                       '2000-403', '2000-404', '210-112', '2000-402', '793-502', '209-113', '2002-1202', '870-553', '249-120', '210-113', '793-503', '249-121', '209-114', '2002-1203', '793-504', '870-554', '210-114', '209-115', '249-122', '2002-1204', '210-115']
+        for partnumber in partnumbers:
+            print(partnumber)
+            url = requests.get("https://smartdata.wago.com/articledata/svhc?articleNr=" +
+                               urllib.parse.quote(str(partnumber), safe="") + "&country=Germany")
+            print(url)
+            soup = BeautifulSoup(url.text, 'lxml')
+            try:
+
+                table = soup.find(id="articleList")
+
+                spn_grabbed = table.tbody.tr.td.text
+                description = table.tbody.tr.td.find_next('td').text
+                reach_substance = table.tbody.tr.td.find_next(
+                    'td').find_next('td').text
+                scip = table.tbody.tr.td.find_next(
+                    'td').find_next('td').find_next('td').text
+                cas_no = table.tbody.tr.td.find_next('td').find_next(
+                    'td').find_next('td').find_next('td').text
+                rohs_status = table.tbody.tr.td.find_next('td').find_next(
+                    'td').find_next('td').find_next('td').find_next('td').text
+                rohs_exception = table.tbody.tr.td.find_next('td').find_next('td').find_next(
+                    'td').find_next('td').find_next('td').find_next('td').text
+
+                scrapped_data.append({"Results": "Found", "Partnumber": partnumber, "PartName": description, "SPN_grabbed": spn_grabbed, "Reach": reach_substance, "Scip": scip, "Cas_no": cas_no,
+                                     "ROHS_Exception": rohs_exception, "ROHS_Status": rohs_status, "Declaration": "https://smartdata.wago.com/articledata/svhc/download?articleNr=" + spn_grabbed + "&country=Austria"})
+
+            except Exception as e:
+                print(e)
+                scrapped_data.append({"status": 404})
+
+        return scrapped_data
+
 
 
 if __name__ == '__main__':
