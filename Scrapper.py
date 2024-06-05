@@ -856,6 +856,59 @@ class Scrapper(Mouser):
             print(e)
             return {"status": 404}
 
+    # ***************************************  scrap_Te data from csv.  ***********************************************
+    def scrap_Tes(self, partnumbers):
+        try:
+            url = "https://www.te.com/commerce/alt/ValidateParts.do"
+
+            payload = 'partNumber=' + partnumber
+            headers = {
+                'authority': 'www.te.com',
+                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                'accept-language': 'en-US,en;q=0.9',
+                'cache-control': 'max-age=0',
+                'content-type': 'application/x-www-form-urlencoded',
+                'referer': 'https://www.te.com/commerce/alt/product-compliance.do',
+                'sec-ch-ua': '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
+                'sec-ch-ua-mobile': '?1',
+                'sec-ch-ua-platform': '"Android"',
+                'sec-fetch-dest': 'document',
+                'sec-fetch-mode': 'navigate',
+                'sec-fetch-site': 'same-origin',
+                'sec-fetch-user': '?1',
+                'upgrade-insecure-requests': '1',
+                'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36',
+                'Access-Control-Request-Method': '*',
+                'x-requested-with': 'XMLHttpRequest'
+
+            }
+
+            response = requests.request(
+                "POST", url, headers=headers, data=payload)
+            soup = BeautifulSoup(response.text, 'lxml')
+            tePartNum = soup.find('div', class_='product_description').text
+            status = soup.find('table').find('tbody').find('tr').find(
+                'td').find('a').find_next('a').find_next('a').text
+            rohsInfo = soup.find('table').find('tbody').find('tr').find(
+                'td').find_next('td').find('div', class_='compliance').find('a').text
+            # try:
+            rohsExcemption = soup.find('table').find('tbody').find('tr').find(
+                'td').find_next('td').find('div', class_='compliance').find('div', style='margin-top:8px;').text
+
+            # except Exception:
+            # pass
+            current_reach_candidate = soup.find('table').find('tbody').find('tr').find('td').find_next('td').find('div', class_='compliance').find_next(
+                'div', class_='compliance').find_next('div', class_='compliance').find_next('div', class_='compliance').find('span').text
+            current_reach_declaration = soup.find('table').find('tbody').find('tr').find('td').find_next('td').find('div', class_='compliance').find_next(
+                'div', class_='compliance').find_next('div', class_='compliance').find_next('div', class_='compliance').find('span').find_next('span').text
+            svhc = soup.find('table').find('tbody').find('tr').find('td').find_next('td').find('div', class_='compliance').find_next(
+                'div', class_='compliance').find_next('div', class_='compliance').find_next('div', class_='compliance').find('span').find_next('span').find_next('span').text
+            return {"Results": "Found", "Status": status, "TE-PartNum": tePartNum, "rohsInfo": rohsInfo,
+                    "rohs-excemption": rohsExcemption, "reach-candidate": current_reach_candidate, "rewach-declaration": current_reach_declaration, "svhc": svhc, "declaration-link": 'https://www.te.com/commerce/alt/SinglePartSearch.do?PN='+tePartNum+'&dest=stmt'}
+        except Exception as e:
+            print(e)
+            return {"status": 404}
+
     
 
 if __name__ == '__main__':
