@@ -8,6 +8,7 @@ from sites.Festo import Festo
 
 
 class Scrapper(Mouser):
+
     def scrap_newark(self, partNumber):
         headers = {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
@@ -769,7 +770,7 @@ class Scrapper(Mouser):
 
     # ***************************************  scrap_Maxim data from csv.  ***********************************************
     def scrap_Maxims(self, partnumbers):
-        part = re.sub.replace(":", "/", partnumbers)
+        part = re.sub.replace(":", "/", partnumber)
         print(part)
         url = requests.get(
             "https://www.maximintegrated.com/en/qa-reliability/emmi/content-lookup/product-content-info.html?partNumber=" + urllib.parse.quote(str(part)))
@@ -959,6 +960,7 @@ class Scrapper(Mouser):
             except Exception as e:
                 print(e)
                 return {"status": 404}
+
 
 if __name__ == '__main__':
     scraper = Scrapper()
