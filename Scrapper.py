@@ -767,6 +767,29 @@ class Scrapper(Mouser):
         except Exception as e:
             return {"status": 404}
 
+    # ***************************************  scrap_Maxim data from csv.  ***********************************************
+    def scrap_Maxims(self, partnumbers):
+        part = re.sub.replace(":", "/", partnumbers)
+        print(part)
+        url = requests.get(
+            "https://www.maximintegrated.com/en/qa-reliability/emmi/content-lookup/product-content-info.html?partNumber=" + urllib.parse.quote(str(part)))
+        soup = BeautifulSoup(url.text, 'lxml')
+        try:
+            table = soup.find(id="productcontentinfo")
+            Rohs_Compliance = table.tbody.tr.td.find_next('td').text
+            Rohs2_compliance = table.tbody.tr.td.find_next(
+                'tr').td.find_next('td').text
+            Halogen_compliance = table.tbody.tr.find_next(
+                'tr').find_next('tr').td.find_next('td').text
+            Reach_Compliance = table.tbody.tr.find_next('tr').find_next(
+                'tr').find_next('tr').td.find_next('td').text
+            print(Rohs_Compliance, Rohs2_compliance,
+                  Halogen_compliance, Reach_Compliance)
+            return {"Results": "Found", "Partnumber": part, "Rohs_Compliance": Rohs_Compliance, "Rohs2_compliance": Rohs2_compliance, "Halogen_compliance": Halogen_compliance, "Reach_Compliance": Reach_Compliance}
+        except Exception as e:
+            print(e)
+            return {"status": 404}
+
     
 
 if __name__ == '__main__':
