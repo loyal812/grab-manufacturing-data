@@ -790,6 +790,50 @@ class Scrapper(Mouser):
             print(e)
             return {"status": 404}
 
+    # ***************************************  scrap_Phoenix data from csv.  ***********************************************
+    def scrap_Phoenixs(self, partnumbers):
+        try:
+            url = "https://www.phoenixcontact.com/customer/api/v1/product-compliance/products?_locale=en-CA&_realm=ca&offset=0&requestedSize=11"
+            reporturl = "https://www.phoenixcontact.com/customer/api/v1/product-compliance/report/guid?_locale=en-CA&_realm=ca"
+
+            # payload = "{\"searchItems\":[\"1084745\"]}"
+            payload = '{\"searchItems\":[\"' + \
+                urllib.parse.quote(str(partnumber)) + '\"]}'
+            headers = {
+                'authority': 'www.phoenixcontact.com',
+                'accept': 'application/json, text/plain, */*',
+                'accept-language': 'en-US,en;q=0.9,de;q=0.8',
+                'cache-control': 'no-cache',
+                'content-type': 'application/json;charset=UTF-8',
+                'origin': 'https://www.phoenixcontact.com',
+                'pragma': 'no-cache',
+                'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="102", "Google Chrome";v="102"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"Windows"',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'same-origin',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36', }
+
+            response = requests.request(
+                "POST", url, headers=headers, data=payload)
+            report_response = requests.request(
+                "POST", reporturl, headers=headers, data=payload)
+            link = "https://www.phoenixcontact.com/customer/api/v1/product-compliance/report/guid/" + \
+                report_response.text + "?_locale=en-US&_realm=us"
+
+            res = response.json()
+
+            for results in res['items'].values():
+
+                if results["validItem"] == False:
+                    return {"status": 404}
+                else:
+                    return results
+        except Exception as e:
+            print(e)
+            return {status: 404}
+
     
 
 if __name__ == '__main__':
