@@ -561,6 +561,26 @@ class Scrapper(Mouser):
             print(e)
             return {"status": 404}
 
+    def scrap_Arrow(self, partnumber):
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36'
+        }
+        url = "http://api.arrow.com/itemservice/v4/en/search/token?login=assent1&apikey=e91ee2fc20668093198daaf7252a7208e06a428b551ac2e652c83ed5671aaaee&search_token=" + \
+            str(partnumber)
+        payload = {}
+        headers = {}
+        response = requests.request(
+            "GET", url, headers=headers, data=payload).json()
+        results = response['itemserviceresult']['data']
+        for res in results:
+            try:
+                for r in res['PartList']:
+
+                    return {"Results": "Found", "MPN": r['partNum'], "Manufacturer": r['manufacturer']['mfrName']}
+            except Exception as e:
+                print(e)
+                return {"status": 404}
+
     def find_Supplier(self, partnumber):
 
         def Check_Response(supplier, response, foundlist):
