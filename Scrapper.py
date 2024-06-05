@@ -354,6 +354,34 @@ class Scrapper(Mouser):
             print(e)
             return {"status": 404}
 
+    def scrap_Molex(self, partnumber):
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36'
+        }
+        url = "https://www.molex.com/molex/search/partSearch?query=" + \
+            urllib.parse.quote(str(partnumber), safe="") + "&pQuery="
+        r = requests.get(url, headers=headers)
+        soup = BeautifulSoup(r.text, 'lxml')
+        try:
+            partname = soup.find(
+                "div", class_="col-md-10").find("h1").text
+            status = soup.find("p", class_="info").find(
+                "span", class_="green").text
+            series = soup.find("a", class_='text-link').text
+            rohs = soup.find(
+                "div", id="tab-environmental").find_all("p")[1].text
+            reach = soup.find(
+                "div", id="tab-environmental").find_all("p")[3].text
+            halogen = soup.find(
+                "div", id="tab-environmental").find_all("p")[4].text
+            link = soup.find(
+                "div", id="tab-environmental").find_all("p")[8].find("a", href=True)
+            declaration = link['href']
+            return {"Results": "Found", "PArtname": partname, "Status": status, "Series": series, "ROHS": rohs, "REACH": reach, "HALOGEN": halogen, "Declaration": declaration}
+        except Exception as e:
+
+            return {"status": 404}
+
     def find_Supplier(self, partnumber):
 
         def Check_Response(supplier, response, foundlist):
