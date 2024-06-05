@@ -834,6 +834,28 @@ class Scrapper(Mouser):
             print(e)
             return {status: 404}
 
+    # ***************************************  scrap_Rscomponents data from csv.  ***********************************************
+    def scrap_Rscomponentss(self, partnumbers):
+        try:
+            url = "https://export.rsdelivers.com/productlist/search?query=" + \
+                urllib.parse.quote(str(partnumber))
+
+            r = requests.get(url)
+            data = BeautifulSoup(r.text, 'lxml')
+            partName = data.find(
+                "h1", class_='product-detail-page-component_title__HAXxV').text
+
+            manufacturerName = data.find("div", class_='pill-component-module_grey__38ctb').find_next(
+                "div", class_='pill-component-module_grey__38ctb').text
+
+            mpn = data.find("div", class_='pill-component-module_grey__38ctb').find_next(
+                "div", class_='pill-component-module_grey__38ctb').find_next("div", class_='pill-component-module_grey__38ctb').text
+
+            return {"Results": "Found", "Partnumber": partnumber, "mpn": mpn, "partName": partName, "manufacturerName": manufacturerName}
+        except Exception as e:
+            print(e)
+            return {"status": 404}
+
     
 
 if __name__ == '__main__':
