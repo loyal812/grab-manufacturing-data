@@ -24,4 +24,5 @@ app.add_middleware(
 def read_root():
     return {"Part Number Scrapper": "Welcome!"}
 
-
+async def get_body(request: Request):
+    return await request.body()
