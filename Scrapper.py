@@ -8,6 +8,53 @@ from sites.Festo import Festo
 
 
 class Scrapper(Mouser):
+    def scrap_newark(self, partNumber):
+        headers = {
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
+        }
+        try:
+            url = 'https://www.newark.com/webapp/wcs/stores/servlet/AjaxSearchLookAhead?storeId=10194&catalogId=15003&langId=-1&searchTerm='
+            response = requests.get(url + str(partNumber), headers=headers)
+
+            soup = BeautifulSoup(response.text, 'lxml')
+            table = soup.find('table', class_="searchBoxResultTable")
+            tr = table.find_all('tr')[0]
+            url_prod = tr.find('td', class_="leftcolumn").find(
+                'a', id="searchResultProductList").attrs['href']
+
+            response_prod = requests.get(url_prod, headers=headers)
+            soup_prod = BeautifulSoup(response_prod.text, 'lxml')
+
+            partNumber = re.findall(r'\bsku: "(.+?)"', response_prod.text)
+            partName = re.findall(r"\bd: '(.+?)'", response_prod.text)
+            brand = re.findall(r'\bm: "(.+?)"', response_prod.text)
+            ds = soup_prod.find(
+                'a', {'data-dtm-eventinfo': "Technical Data Sheet"})
+            st = soup_prod.find('span', class_="availTxtMsg").text or ''
+
+            rohs_table = soup_prod.find(
+                'table', class_='details-table-desktop')
+            for tr in rohs_table.find_all('tr'):
+                if 'RoHS Compliant' in tr.find('th').text:
+                    rohs_stat = tr.find(
+                        'td', class_="rohsDescription").contents[0] or ''
+                    break
+
+            result = {
+                'Results': 'Found',
+                'status': re.sub(r'\d', '', st).strip() or None,
+                'partNumber': partNumber[0] if partNumber else None,
+                'partName': partName[0] if partName else None,
+                'dataSheet': ds.attrs['href'] if ds else None,
+                'brand': brand[0] if brand else None,
+                'RoHSCompliantStatus': rohs_stat.strip()
+            }
+        except Exception as e:
+            print('part number is not found on server')
+            return {"status": 404}
+
+        return result
+
     def find_Supplier(self, partnumber):
 
         def Check_Response(supplier, response, foundlist):
