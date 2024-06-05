@@ -227,6 +227,81 @@ class Scrapper(Mouser):
 
         return result
 
+    def scrap_festo(self, partnumber):
+        # print(partnumber)
+        url = "https://www.festo.com/ca/en/search/autocomplete/SearchBoxComponent?term=" + \
+            str(partnumber)
+
+        try:
+            # request part information from Festo server
+            res = requests.request("GET", url)
+        except:
+            return {"status": 404}
+
+        response = json.loads(res.text)
+
+        results = response['pagination']['totalNumberOfResults']
+
+        # handle the returns depending on how many parts are found
+        if results == 0:
+            # no parts have been found
+            print(f'part number {partnumber} is not found on server')
+            return {"status": 404}
+
+        elif results > 1:
+            # more than one part has been found, search for exact match
+            part = Festo().multiple_results(response, partnumber)
+            # make sure error message is correctly handled if no exact match is found
+            if part == {"status": 404}:
+                return part
+
+        elif results == 1:
+            # exactly one part has been found
+            part = response['products'][0]
+
+        # search if part is on SVHC / Exemption list
+        dsl_found = Festo().substances.loc[Festo(
+        ).substances['Identifier'] == str(part['code'])]
+
+        # extract the wanted part information
+        result = {
+
+            # search result
+            'Results': 'found',
+
+            # Festo Part Number
+            'FestoPartNumber': part['code'],
+
+            # Festo Part Name
+            'FestoPartName': part['name'],
+
+            # Festo Order Code
+            "FestoOrderCode": part['orderCode'],
+
+            # Part link
+            "PartURL": f"https://www.festo.com/ca/en{str(part['url'])}",
+
+            # ROHS information
+            'ROHS exemption': " / ".join(str(v) for v in dsl_found['ROHS Exemption:']),
+
+            # SVHC substance
+            'SVHC contained:': " / ".join(str(v) for v in dsl_found['SVHC contained:']),
+
+            # SVHC CAS
+            'SVHC CAS number': " / ".join(str(v) for v in dsl_found['CAS:']),
+
+            # SCIP number
+            'SCIP number': " / ".join(str(v) for v in dsl_found['SCIP number']),
+
+            # Article name
+            'Article name': " / ".join(str(v) for v in dsl_found['Article name']),
+
+            # Last updated
+            'Last updated': " / ".join(str(v) for v in dsl_found['Last Updated'])
+        }
+
+        return result
+
     def find_Supplier(self, partnumber):
 
         def Check_Response(supplier, response, foundlist):
