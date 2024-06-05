@@ -329,6 +329,31 @@ class Scrapper(Mouser):
         except Exception as e:
             return {"status": 404}
 
+    def scrap_Maxim(self, partnumber):
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36'
+        }
+        # part = re.sub.replace(":", "/", partnumber)
+        # print(part)
+        url = requests.get(
+            "https://www.maximintegrated.com/en/qa-reliability/emmi/content-lookup/product-content-info.html?partNumber=" + urllib.parse.quote(str(partnumber)), headers=headers)
+        soup = BeautifulSoup(url.text, 'lxml')
+        try:
+            table = soup.find(id="productcontentinfo")
+            Rohs_Compliance = table.tbody.tr.td.find_next('td').text
+            Rohs2_compliance = table.tbody.tr.td.find_next(
+                'tr').td.find_next('td').text
+            Halogen_compliance = table.tbody.tr.find_next(
+                'tr').find_next('tr').td.find_next('td').text
+            Reach_Compliance = table.tbody.tr.find_next('tr').find_next(
+                'tr').find_next('tr').td.find_next('td').text
+            print(Rohs_Compliance, Rohs2_compliance,
+                  Halogen_compliance, Reach_Compliance)
+            return {"Results": "Found", "Partnumber": part, "Rohs_Compliance": Rohs_Compliance, "Rohs2_compliance": Rohs2_compliance, "Halogen_compliance": Halogen_compliance, "Reach_Compliance": Reach_Compliance}
+        except Exception as e:
+            print(e)
+            return {"status": 404}
+
     def find_Supplier(self, partnumber):
 
         def Check_Response(supplier, response, foundlist):
