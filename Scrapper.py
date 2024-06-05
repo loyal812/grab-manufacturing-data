@@ -681,6 +681,63 @@ class Scrapper(Mouser):
 
         return scrapped_data
 
+    # ***************************************  scrap_Molex data from csv.  ***********************************************
+    def scrap_Molexs(self, partnumbers):
+        print(partnumbers)
+        scrapped_data = []
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36'
+        }
+        for partnumber in partnumbers:
+            print(partnumber)
+            url = "https://www.molex.com/molex/search/partSearch?query=" + \
+                urllib.parse.quote(str(partnumber), safe="") + "&pQuery="
+            r = requests.get(url, headers=headers)
+            soup = BeautifulSoup(r.text, 'lxml')
+            try:
+                partname = soup.find(
+                    "div", class_="col-md-10").find("h1").text
+                status = soup.find("p", class_="info").find(
+                    "span", class_="green").text
+                series = soup.find("a", class_='text-link').text
+                rohs = soup.find(
+                    "div", id="tab-environmental").find_all("p")[1].text
+                reach = soup.find(
+                    "div", id="tab-environmental").find_all("p")[3].text
+                halogen = soup.find(
+                    "div", id="tab-environmental").find_all("p")[4].text
+                link = soup.find(
+                    "div", id="tab-environmental").find_all("p")[8].find("a", href=True)
+                declaration = link['href']
+                scrapped_data.append(
+                    {"Results": "Found",
+                     "MPN": "",
+                     "PArtname": partname.strip(),
+                     "Status": status.strip(),
+                        "Series": series.strip(),
+                     "ROHS": rohs.strip(),
+                     "REACH": reach.strip(),
+                     "HALOGEN": halogen.strip(),
+                     "Declaration": declaration.strip()}
+                )
+                print(scrapped_data)
+                # return {"Results": "Found", "MPN": mpn, "PArtname": partname, "Status": status, "Series": series, "ROHS": rohs, "REACH": reach, "HALOGEN": halogen, "Declaration": declaration}
+
+            except Exception as e:
+                scrapped_data.append(
+                    {"Results": "Not Found",
+                     "MPN": "",
+                     "PArtname": partnumber,
+                     "Status": "",
+                        "Series": "",
+                     "ROHS": "",
+                     "REACH": "",
+                     "HALOGEN": "",
+                     "Declaration": ""}
+                )
+                # return {"status": 404}
+        print(scrapped_data)
+        return scrapped_data
 
 
 if __name__ == '__main__':
