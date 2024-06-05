@@ -140,6 +140,93 @@ class Scrapper(Mouser):
 
         return result
 
+    def scrap_murata(self, partNumber):
+        try:
+            url = 'https://www.murata.com/en-us/products/productdetail?partno=' + partNumber
+            response = requests.get(url)
+            series_re = re.search(r'Series=(.+?)(,| /)', response.text)
+            print("---------hello world------------", response)
+            if series_re:
+                series = series_re.group(1)
+            else:
+                series = partNumber
+
+            soup = BeautifulSoup(response.text, 'lxml')
+            status_icons = soup.find('ul', class_='detail-status-icon')
+            for icon in status_icons.find_all('li'):
+                status_img_link = icon.find('img').attrs['src']
+                if 'avairable' in status_img_link:
+                    status = 'available'
+                    break
+                elif 'discontinued' in status_img_link:
+                    status = 'discontinued'
+                    break
+                elif 'planneddiscontinue' in status_img_link:
+                    status = 'to be discontinued'
+                    break
+                elif 'nrnd' in status_img_link:
+                    status = 'not recommended for new design'
+                    break
+
+            def search_doc_link(type_: list, section):
+                docs_divs = soup.find_all('div', class_="detail-sidenavi")
+                for dd in docs_divs:
+                    if dd.find('h2', text=section):
+                        for doc_a in dd.find_all('a'):
+                            for t in type_:
+                                if t in doc_a.text:
+                                    doc_link = doc_a.attrs['href']
+                                if not doc_link.startswith('http'):
+                                    return 'https://murata.com/' + doc_link
+                                else:
+                                    return doc_link
+
+            dsheet = search_doc_link(
+                ['Data Sheet', 'Specifications Sheet'], 'Details')
+            rohs_url = search_doc_link(['RoHS'], 'Related Links')
+            reach_url = search_doc_link(['REACH'], 'Related Links')
+
+            for pdf_list_url in {rohs_url, reach_url}:
+                response_pdflist = requests.get(pdf_list_url)
+                soup_pdf = BeautifulSoup(response_pdflist.text, 'lxml')
+
+            rohs, reach = (None, None)
+
+            for table in soup_pdf.find_all('table', class_="m-table_table"):
+                links_pdf = []
+                for tbody in table.find_all('tbody'):
+                    for tr in table.find_all('tr'):
+                        tds = tr.find_all('td')
+                        if tds:
+                            series_pdf = tds[0].text.split()[0].rstrip('*')
+                            links_pdf.append(
+                                (series_pdf, tds[1].find('a').attrs['href']))
+                            links_pdf = sorted(
+                                links_pdf, key=lambda x: -len(x[0]))
+
+                for sr_pdf, pdf_link in links_pdf:
+                    if sr_pdf in series:
+                        if '-rohs-' in tds[1].find('a').attrs['href'] and rohs is None:
+                            rohs = 'https://www.murata.com' + pdf_link
+                        elif '-reach-' in tds[1].find('a').attrs['href'] and reach is None:
+                            reach = 'https://www.murata.com' + pdf_link
+
+            result = {
+                'Results': 'Found',
+                'status': status,
+                'partNumber': partNumber,
+                'partName': soup.find('h1').text.strip(),
+                'DataSheet': dsheet,
+                'RoHS': rohs,
+                'REACH': reach
+            }
+
+        except Exception as e:
+            print('part number is not found on server')
+            return {"status": 404}
+
+        return result
+
     def find_Supplier(self, partnumber):
 
         def Check_Response(supplier, response, foundlist):
