@@ -119,6 +119,27 @@ class Scrapper(Mouser):
 
         return result
 
+    def scrap_ti(self, partnumber):
+        print(partnumber)
+        url = 'https://www.ti.com/product/' + str(partnumber)
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'lxml')
+        datasheet = soup.find('a', navtitle="data sheet") or ''
+        try:
+            result = {
+                'Results': 'Found',
+                'status': soup.find('ti-product-status').find('a').text,
+                'Partnumber': soup.find('ti-main-panel').attrs["gpn"],
+                'partName': soup.find('h2').text,
+                'CertificateDeclaration': None,
+                'DataSheetURL': ('https://www.ti.com' + datasheet.attrs["href"]) if datasheet else None
+            }
+        except Exception as e:
+            print('part number is not found on server')
+            return {"status": 404}
+
+        return result
+
     def find_Supplier(self, partnumber):
 
         def Check_Response(supplier, response, foundlist):
