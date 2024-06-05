@@ -55,6 +55,70 @@ class Scrapper(Mouser):
 
         return result
 
+    def scrap_3m(self, productNumber):
+        print('hello world', productNumber)
+        url = 'https://www.3m.com/3M/en_US/p/?Ntt=' + str(productNumber)
+        response = requests.get(url,
+                                headers={'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'})
+        matches = re.search(
+            r'window.__INITIAL_DATA = ({.+})', response.text).group(1)
+        matches_list = json.loads(matches)['items']
+        try:
+            headers = {
+                'accept': '*/*',
+                'accept-encoding': 'gzip, deflate, br',
+                'accept-language': 'en-US,en;q=0.9,uk-UA;q=0.8,uk;q=0.7,ru;q=0.6',
+                'cache-control': 'max-age=0',
+                'connection': 'keep-alive',
+                'sec-ch-ua': '"Not?A_Brand";v="8", "Chromium";v="108", "Google Chrome";v="108"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"Windows"',
+                'sec-fetch-dest': 'document',
+                'sec-fetch-mode': 'navigate',
+                'sec-fetch-site': 'none',
+                'sec-fetch-user': '?1',
+                'upgrade-insecure-requests': '1',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+            }
+            prod_url = matches_list[0].get('url')
+            response_page = requests.get(prod_url, headers=headers)
+
+            safety_sheets = []
+            soup = BeautifulSoup(response_page.text, 'lxml')
+            tab_divs = soup.find_all('div', class_='MMM--dataGroup-hd')
+            for div in tab_divs:
+                if div.find('div', text='Safety Data Sheets'):
+                    safety_links = div.find_all('a')
+                    for a in safety_links:
+                        safety_sheets.append(a.attrs['href'])
+
+            disc_notice = soup.find('div', text="Discontinuation Notices")
+            if disc_notice:
+                status = 'discontinued'
+            else:
+                status = 'active'
+
+            re_stock_no = re.search(
+                r'<em>(.+?)</em>', matches_list[0].get('stockNumber'))
+            if re_stock_no:
+                stock_no = re_stock_no.group(1)
+            else:
+                stock_no = productNumber
+
+            result = {
+                'Results': 'Found',
+                'status': status,
+                'productNumber': stock_no,
+                'partName': soup.find('h1').text,
+                'safetyDataSheetURL': safety_sheets
+
+            }
+        except Exception as e:
+            print('part number is not found on server')
+            return {"status": 404}
+
+        return result
+
     def find_Supplier(self, partnumber):
 
         def Check_Response(supplier, response, foundlist):
